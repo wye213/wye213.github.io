@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>WLELE</title>
+  
+  <link href="/atom.xml" rel="self"/>
+  
+  <link href="https://wye213.github.com/"/>
+  <updated>2017-05-25T15:43:12.000Z</updated>
+  <id>https://wye213.github.com/</id>
+  
+  <author>
+    <name>WLELE</name>
+    
+  </author>
+  
+  <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>MySQL事务</title>
+    <link href="https://wye213.github.com/2017/05/10/mysql-transaction/"/>
+    <id>https://wye213.github.com/2017/05/10/mysql-transaction/</id>
+    <published>2017-05-10T14:00:00.000Z</published>
+    <updated>2017-05-25T15:43:12.000Z</updated>
+    
+    <content type="html"><![CDATA[<h4 id="MySQL事务"><a href="#MySQL事务" class="headerlink" title="MySQL事务"></a>MySQL事务</h4><h5 id="ACID术语介绍"><a href="#ACID术语介绍" class="headerlink" title="ACID术语介绍"></a>ACID术语介绍</h5><ul>
+<li><p>原子性（A）</p>
+<p>  事务是不可再次分割，必须都成功或者失败全部回滚</p>
+</li>
+<li><p>一致性（C）</p>
+<p>  确保数据库数据关系的完整性和业务逻辑上的一致性 （比如不会出现，转账后，一个账户扣了钱，但是另外个账户却没有收到钱）</p>
+</li>
+<li><p>隔离性（I）</p>
+<p>  一个事务所做的修改在最终提交以前，对其他事务是不可见的    </p>
+</li>
+<li><p>持久性（D）</p>
+<p>  事务提交后，它对数据库中数据的改变就是永久性的</p>
+</li>
+</ul>
+<h5 id="锁"><a href="#锁" class="headerlink" title="锁"></a>锁</h5><h6 id="锁级别"><a href="#锁级别" class="headerlink" title="锁级别"></a>锁级别</h6><ul>
+<li><p>共享锁</p>
+<p>  用户只读操作，锁定共享资源。不会阻止其他读操作，但是会阻止修改</p>
+</li>
+<li><p>排它锁</p>
+<p>  一次只能有一个排它锁在一个资源上，阻止其它所有的锁。实用mysql的排它锁，需要关闭mysql的自动提交功能</p>
+</li>
+</ul>
+<h6 id="使用方式"><a href="#使用方式" class="headerlink" title="使用方式"></a>使用方式</h6><ul>
+<li><p>悲观锁</p>
+<p>  先获得锁在访问，在整个数据处理过程中，将数据处于锁定状态。通常依靠数据库提供的锁机制（排它锁）实现。<br>  可以保证数据一致性，但是开销会增长。</p>
+</li>
+<li><p>乐观锁</p>
+<p>  乐观锁认为数据一般情况下不会造成冲突，在数据提交更新时才会去检查数据冲突。乐观锁不会实用数据库提供的锁机制。通常根据数据版本号控制，<br>  在第一次取出的版本号和更新时的数据库中数据的当前版本号比对检查冲突。</p>
+</li>
+</ul>
+<h6 id="锁粒度"><a href="#锁粒度" class="headerlink" title="锁粒度"></a>锁粒度</h6><ul>
+<li><p>行级锁</p>
+<p>  行级锁是基于索引的，如果一条sql没有使用到索引，则不会实用行级锁，相反会实用表级锁锁表</p>
+</li>
+<li><p>表级锁</p>
+<p>  表级锁会锁表操作</p>
+</li>
+</ul>
+<h5 id="事务的隔离"><a href="#事务的隔离" class="headerlink" title="事务的隔离"></a>事务的隔离</h5><p>在数据库中通常是采用锁来实现事务的隔离性的。当多个事务同时更新数据库中相同的数据时，只允许持有锁的事务能更新该数据，其他事务必须等待，直到前一个事务释放了锁，其他事务才有机会更新该数据。</p>
+<ul>
+<li><p>脏读</p>
+<p>  顾名思义：读取到是脏数据，这种一般是在事务未提交时读到的数据，比如一个事务对一条数据做修改，因为这条数据是处于待定状态的（可能提交也可能回滚）</p>
+</li>
+<li><p>不可重复读</p>
+<p>  一个事务内先后读取同一条记录，但是两次读取的内容却不一致，在读取数据过程中，数据被其他事务修改过， 重点在update或是delete</p>
+</li>
+<li><p>幻读</p>
+<p>  一个事务内按相同的查询条件重新读取以前检索过的数据，却发现其他事务插入了满足其查询条件的新数据，这种现象就称为幻读，重点在有insert</p>
+</li>
+</ul>
+<p>事务的隔离级别</p>
+<pre><code>1. 未提交读：一个事务更新没有做提交，其他事务可以看到变更。容忍脏读
+2. 提交读：只能读取到提交后数据，可以避免脏读现象，但是会发现不能解决不可重复读的问题
+3. 可重复读：在同一个事务内的查询都是在事务开始时刻一致的，InnoDB的默认级别
+4. 串行读：事务内的操作串行化
+</code></pre>]]></content>
+    
+    <summary type="html">
+    
+      &lt;h4 id=&quot;MySQL事务&quot;&gt;&lt;a href=&quot;#MySQL事务&quot; class=&quot;headerlink&quot; title=&quot;MySQL事务&quot;&gt;&lt;/a&gt;MySQL事务&lt;/h4&gt;&lt;h5 id=&quot;ACID术语介绍&quot;&gt;&lt;a href=&quot;#ACID术语介绍&quot; class=&quot;headerli
+    
+    </summary>
+    
+      <category term="Tech" scheme="https://wye213.github.com/categories/Tech/"/>
+    
+    
+      <category term="MySQL" scheme="https://wye213.github.com/tags/MySQL/"/>
+    
+  </entry>
+  
+  <entry>
+    <title>NoSQL基本概览</title>
+    <link href="https://wye213.github.com/2016/09/10/nosql-general-overview/"/>
+    <id>https://wye213.github.com/2016/09/10/nosql-general-overview/</id>
+    <published>2016-09-10T14:00:00.000Z</published>
+    <updated>2017-05-14T09:27:45.000Z</updated>
+    
+    <content type="html"><![CDATA[<h4 id="NoSQL数据库存在的三大基石"><a href="#NoSQL数据库存在的三大基石" class="headerlink" title="NoSQL数据库存在的三大基石"></a>NoSQL数据库存在的三大基石</h4><ul>
+<li><p>CAP</p>
+<p>  C：consistency 一致性<br>  A ：available 可用性(强调性能)<br>  P : tolerance of network partition 分区容忍性(即分布式) 在分布式的系统中我们往往不能保证CAP同时满足，只能满足其二，根据实际情况取舍</p>
+</li>
+<li><p>一致性</p>
+<p>  强一致性，在对存储系统写入数据后，之后的读操作都应该是最新的数据<br>  弱一致性，在对存储系统写入数据后，在一段一致性时间后的读操作都应该是最新的数据<br>  最终一致性，在对存储系统写入数据后，根据不同的策略使得后续的读操作都应该是最新的数据。弱一致性的一种特例。</p>
+</li>
+<li><p>BASE BASE是ACID的一个变种</p>
+<p>  Basically available 基本可用<br>  Soft-State 软状态 无连接的<br>  Eventual Consistency 最终一致性</p>
+</li>
+</ul>
+<p>补充ACID数据库管理系统 A : Atomicity 原子性 C ： Consistency 一致性 I ： Isolation 隔离性 D ： Durability 持久性</p>
+<p>BASE 模型完全对立与ACID模式，牺牲一致性，保证可用性和可靠性。ACID保证了数据的一致性，但是BASE保证可用性</p>
+<p>五分钟法则 在记录被频繁读取，我们应该将记录存放到内存中，把那些不常使用的记录存放到磁盘上按需访问即可</p>
+<h4 id="分布式架构"><a href="#分布式架构" class="headerlink" title="分布式架构"></a>分布式架构</h4><h5 id="采用一致性哈希方式"><a href="#采用一致性哈希方式" class="headerlink" title="采用一致性哈希方式"></a>采用一致性哈希方式</h5><ol>
+<li><p>要求满足单调性 即在发生单点故障时，数据不会发生丢失，在增加节点时，尽可能小的改变映射关系</p>
+<p> 设计一个hash圆环 首先将对象映射到hash空间中，在将cache服务器映射到hash空间中，最后在hash空间中将对象和cached服务器关联起来</p>
+</li>
+<li><p>实现cached服务器的均匀负载 引入了虚拟节点的方式</p>
+<p> 虚拟节点即是实际节点在hash空间的复制，虚拟节点在 hash 空间中以 hash 值排列<br> 对虚拟节点hash可以采用实际cached的IP地址加上序号的方式</p>
+</li>
+</ol>
+]]></content>
+    
+    <summary type="html">
+    
+      &lt;h4 id=&quot;NoSQL数据库存在的三大基石&quot;&gt;&lt;a href=&quot;#NoSQL数据库存在的三大基石&quot; class=&quot;headerlink&quot; title=&quot;NoSQL数据库存在的三大基石&quot;&gt;&lt;/a&gt;NoSQL数据库存在的三大基石&lt;/h4&gt;&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;CAP&lt;/p&gt;
+&lt;
+    
+    </summary>
+    
+      <category term="Tech" scheme="https://wye213.github.com/categories/Tech/"/>
+    
+    
+      <category term="NoSQL" scheme="https://wye213.github.com/tags/NoSQL/"/>
+    
+  </entry>
+  
+</feed>

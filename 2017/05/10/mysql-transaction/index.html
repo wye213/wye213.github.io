@@ -1,0 +1,786 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Monaco:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="MySQL," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="WLELE" type="application/atom+xml" />
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.1" />
+
+
+
+
+
+
+<meta name="description" content="MySQL事务ACID术语介绍 原子性（A）   事务是不可再次分割，必须都成功或者失败全部回滚  一致性（C）   确保数据库数据关系的完整性和业务逻辑上的一致性 （比如不会出现，转账后，一个账户扣了钱，但是另外个账户却没有收到钱）  隔离性（I）   一个事务所做的修改在最终提交以前，对其他事务是不可见的      持久性（D）   事务提交后，它对数据库中数据的改变就是永久性的   锁锁级别">
+<meta name="keywords" content="MySQL">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL事务">
+<meta property="og:url" content="https://wye213.github.com/2017/05/10/mysql-transaction/index.html">
+<meta property="og:site_name" content="WLELE">
+<meta property="og:description" content="MySQL事务ACID术语介绍 原子性（A）   事务是不可再次分割，必须都成功或者失败全部回滚  一致性（C）   确保数据库数据关系的完整性和业务逻辑上的一致性 （比如不会出现，转账后，一个账户扣了钱，但是另外个账户却没有收到钱）  隔离性（I）   一个事务所做的修改在最终提交以前，对其他事务是不可见的      持久性（D）   事务提交后，它对数据库中数据的改变就是永久性的   锁锁级别">
+<meta property="og:updated_time" content="2017-05-25T15:43:12.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="MySQL事务">
+<meta name="twitter:description" content="MySQL事务ACID术语介绍 原子性（A）   事务是不可再次分割，必须都成功或者失败全部回滚  一致性（C）   确保数据库数据关系的完整性和业务逻辑上的一致性 （比如不会出现，转账后，一个账户扣了钱，但是另外个账户却没有收到钱）  隔离性（I）   一个事务所做的修改在最终提交以前，对其他事务是不可见的      持久性（D）   事务提交后，它对数据库中数据的改变就是永久性的   锁锁级别">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://wye213.github.com/2017/05/10/mysql-transaction/"/>
+
+
+
+
+
+  <title>MySQL事务 | WLELE</title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">WLELE</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="https://wye213.github.com/2017/05/10/mysql-transaction/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="WLELE">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="WLELE">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">MySQL事务</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-05-10T22:00:00+08:00">
+                2017-05-10
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Tech/" itemprop="url" rel="index">
+                    <span itemprop="name">Tech</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h4 id="MySQL事务"><a href="#MySQL事务" class="headerlink" title="MySQL事务"></a>MySQL事务</h4><h5 id="ACID术语介绍"><a href="#ACID术语介绍" class="headerlink" title="ACID术语介绍"></a>ACID术语介绍</h5><ul>
+<li><p>原子性（A）</p>
+<p>  事务是不可再次分割，必须都成功或者失败全部回滚</p>
+</li>
+<li><p>一致性（C）</p>
+<p>  确保数据库数据关系的完整性和业务逻辑上的一致性 （比如不会出现，转账后，一个账户扣了钱，但是另外个账户却没有收到钱）</p>
+</li>
+<li><p>隔离性（I）</p>
+<p>  一个事务所做的修改在最终提交以前，对其他事务是不可见的    </p>
+</li>
+<li><p>持久性（D）</p>
+<p>  事务提交后，它对数据库中数据的改变就是永久性的</p>
+</li>
+</ul>
+<h5 id="锁"><a href="#锁" class="headerlink" title="锁"></a>锁</h5><h6 id="锁级别"><a href="#锁级别" class="headerlink" title="锁级别"></a>锁级别</h6><ul>
+<li><p>共享锁</p>
+<p>  用户只读操作，锁定共享资源。不会阻止其他读操作，但是会阻止修改</p>
+</li>
+<li><p>排它锁</p>
+<p>  一次只能有一个排它锁在一个资源上，阻止其它所有的锁。实用mysql的排它锁，需要关闭mysql的自动提交功能</p>
+</li>
+</ul>
+<h6 id="使用方式"><a href="#使用方式" class="headerlink" title="使用方式"></a>使用方式</h6><ul>
+<li><p>悲观锁</p>
+<p>  先获得锁在访问，在整个数据处理过程中，将数据处于锁定状态。通常依靠数据库提供的锁机制（排它锁）实现。<br>  可以保证数据一致性，但是开销会增长。</p>
+</li>
+<li><p>乐观锁</p>
+<p>  乐观锁认为数据一般情况下不会造成冲突，在数据提交更新时才会去检查数据冲突。乐观锁不会实用数据库提供的锁机制。通常根据数据版本号控制，<br>  在第一次取出的版本号和更新时的数据库中数据的当前版本号比对检查冲突。</p>
+</li>
+</ul>
+<h6 id="锁粒度"><a href="#锁粒度" class="headerlink" title="锁粒度"></a>锁粒度</h6><ul>
+<li><p>行级锁</p>
+<p>  行级锁是基于索引的，如果一条sql没有使用到索引，则不会实用行级锁，相反会实用表级锁锁表</p>
+</li>
+<li><p>表级锁</p>
+<p>  表级锁会锁表操作</p>
+</li>
+</ul>
+<h5 id="事务的隔离"><a href="#事务的隔离" class="headerlink" title="事务的隔离"></a>事务的隔离</h5><p>在数据库中通常是采用锁来实现事务的隔离性的。当多个事务同时更新数据库中相同的数据时，只允许持有锁的事务能更新该数据，其他事务必须等待，直到前一个事务释放了锁，其他事务才有机会更新该数据。</p>
+<ul>
+<li><p>脏读</p>
+<p>  顾名思义：读取到是脏数据，这种一般是在事务未提交时读到的数据，比如一个事务对一条数据做修改，因为这条数据是处于待定状态的（可能提交也可能回滚）</p>
+</li>
+<li><p>不可重复读</p>
+<p>  一个事务内先后读取同一条记录，但是两次读取的内容却不一致，在读取数据过程中，数据被其他事务修改过， 重点在update或是delete</p>
+</li>
+<li><p>幻读</p>
+<p>  一个事务内按相同的查询条件重新读取以前检索过的数据，却发现其他事务插入了满足其查询条件的新数据，这种现象就称为幻读，重点在有insert</p>
+</li>
+</ul>
+<p>事务的隔离级别</p>
+<pre><code>1. 未提交读：一个事务更新没有做提交，其他事务可以看到变更。容忍脏读
+2. 提交读：只能读取到提交后数据，可以避免脏读现象，但是会发现不能解决不可重复读的问题
+3. 可重复读：在同一个事务内的查询都是在事务开始时刻一致的，InnoDB的默认级别
+4. 串行读：事务内的操作串行化
+</code></pre>
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/MySQL/" rel="tag"># MySQL</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/09/10/nosql-general-overview/" rel="next" title="NoSQL基本概览">
+                <i class="fa fa-chevron-left"></i> NoSQL基本概览
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="WLELE" />
+          <p class="site-author-name" itemprop="name">WLELE</p>
+           
+              <p class="site-description motion-element" itemprop="description"></p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">1</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">2</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+          <div class="feed-link motion-element">
+            <a href="/atom.xml" rel="alternate">
+              <i class="fa fa-rss"></i>
+              RSS
+            </a>
+          </div>
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#MySQL事务"><span class="nav-number">1.</span> <span class="nav-text">MySQL事务</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#ACID术语介绍"><span class="nav-number">1.1.</span> <span class="nav-text">ACID术语介绍</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#锁"><span class="nav-number">1.2.</span> <span class="nav-text">锁</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#锁级别"><span class="nav-number">1.2.1.</span> <span class="nav-text">锁级别</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#使用方式"><span class="nav-number">1.2.2.</span> <span class="nav-text">使用方式</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#锁粒度"><span class="nav-number">1.2.3.</span> <span class="nav-text">锁粒度</span></a></li></ol></li><li class="nav-item nav-level-5"><a class="nav-link" href="#事务的隔离"><span class="nav-number">1.3.</span> <span class="nav-text">事务的隔离</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">WLELE</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Mist
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
